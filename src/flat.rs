@@ -1,6 +1,8 @@
-use crate::{Channels, Protocol};
+use crate::{
+    format::{serde::Serializer, Serde},
+    Bottom, Channels, Protocol,
+};
 use core::{
-    convert::Infallible,
     num::{
         NonZeroI128, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI8, NonZeroIsize, NonZeroU128,
         NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU8, NonZeroUsize,
@@ -23,16 +25,16 @@ pub struct Insufficient;
 macro_rules! flat {
     ( $( $x:ty ),* ) => {
         $(
-            impl<C: Channels<$x, Infallible>> Protocol<C> for $x
+            impl<T: Serializer, C: Channels<$x, Bottom>> Protocol<C, Serde<T>> for $x
             where
                 C::Unravel: Unpin,
-                C::Coalesce: Unpin,
+                C::Coalesce: Unpin
             {
                 type Unravel = $x;
                 type UnravelError = <C::Unravel as Sink<$x>>::Error;
                 type UnravelFuture =
                     Forward<Once<Ready<Result<$x, <C::Unravel as Sink<$x>>::Error>>>, C::Unravel>;
-                type Coalesce = Infallible;
+                type Coalesce = Bottom;
                 type CoalesceError = Insufficient;
                 type CoalesceFuture =
                     Map<StreamFuture<C::Coalesce>, fn((Option<$x>, C::Coalesce)) -> Result<$x, Insufficient>>;
@@ -76,9 +78,8 @@ mod std {
         net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6},
         time::SystemTime,
     };
-
     flat! {
-        /// This requires the `std` feature, which is enabled by default
+        /// *This requires the `alloc` feature, which is enabled by default*
         IpAddr, Ipv4Addr, Ipv6Addr,
         SocketAddr, SocketAddrV4, SocketAddrV6,
         SystemTime
@@ -89,9 +90,8 @@ mod std {
 mod alloc {
     use super::*;
     use ::alloc::string::String;
-
     flat! {
-        /// This requires the `alloc` feature, which is enabled by default
+        // *This requires the `alloc` feature, which is enabled by default*
         String
     }
 }

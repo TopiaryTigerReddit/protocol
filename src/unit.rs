@@ -1,15 +1,15 @@
-use crate::{Channels, Protocol};
+use crate::{Bottom, Channels, Protocol};
 use core::{
     convert::Infallible,
     marker::{PhantomData, PhantomPinned},
 };
 use futures::future::{ready, Ready};
 
-impl<C> Protocol<C> for () {
-    type Unravel = Infallible;
+impl<C, F: ?Sized> Protocol<C, F> for () {
+    type Unravel = Bottom;
     type UnravelError = Infallible;
     type UnravelFuture = Ready<Result<(), Infallible>>;
-    type Coalesce = Infallible;
+    type Coalesce = Bottom;
     type CoalesceError = Infallible;
     type CoalesceFuture = Ready<Result<(), Infallible>>;
 
@@ -28,11 +28,11 @@ impl<C> Protocol<C> for () {
     }
 }
 
-impl<T, C> Protocol<C> for [T; 0] {
-    type Unravel = Infallible;
+impl<T, C, F: ?Sized> Protocol<C, F> for [T; 0] {
+    type Unravel = Bottom;
     type UnravelError = Infallible;
     type UnravelFuture = Ready<Result<(), Infallible>>;
-    type Coalesce = Infallible;
+    type Coalesce = Bottom;
     type CoalesceError = Infallible;
     type CoalesceFuture = Ready<Result<[T; 0], Infallible>>;
 
@@ -51,11 +51,11 @@ impl<T, C> Protocol<C> for [T; 0] {
     }
 }
 
-impl<T: ?Sized, C> Protocol<C> for PhantomData<T> {
-    type Unravel = Infallible;
+impl<T: ?Sized, C, F: ?Sized> Protocol<C, F> for PhantomData<T> {
+    type Unravel = Bottom;
     type UnravelError = Infallible;
     type UnravelFuture = Ready<Result<(), Infallible>>;
-    type Coalesce = Infallible;
+    type Coalesce = Bottom;
     type CoalesceError = Infallible;
     type CoalesceFuture = Ready<Result<PhantomData<T>, Infallible>>;
 
@@ -74,11 +74,11 @@ impl<T: ?Sized, C> Protocol<C> for PhantomData<T> {
     }
 }
 
-impl<C> Protocol<C> for PhantomPinned {
-    type Unravel = Infallible;
+impl<C, F: ?Sized> Protocol<C, F> for PhantomPinned {
+    type Unravel = Bottom;
     type UnravelError = Infallible;
     type UnravelFuture = Ready<Result<(), Infallible>>;
-    type Coalesce = Infallible;
+    type Coalesce = Bottom;
     type CoalesceError = Infallible;
     type CoalesceFuture = Ready<Result<PhantomPinned, Infallible>>;
 

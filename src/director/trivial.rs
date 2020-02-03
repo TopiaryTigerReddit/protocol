@@ -1,5 +1,5 @@
 use super::{Director, DirectorError, Empty};
-use crate::{Channel, Channels, ContextError, Dispatch, Join, Protocol, Spawn};
+use crate::{Bottom, Channel, Channels, ContextError, Dispatch, Format, Join, Protocol, Spawn};
 use core::{
     convert::Infallible,
     marker::PhantomData,
@@ -140,8 +140,12 @@ impl<T, U> Dispatch for Context<T, U> {
     type Handle = ();
 }
 
-impl<T, U, P: Protocol<Context<Empty, Empty>, Unravel = Infallible, Coalesce = Infallible>> Join<P>
-    for Context<T, U>
+impl<
+        F: ?Sized + Format<Bottom>,
+        T,
+        U,
+        P: Protocol<Context<Empty, Empty>, F, Unravel = Bottom, Coalesce = Bottom>,
+    > Join<P, F> for Context<T, U>
 {
     type Error = Infallible;
     type Target = Context<Empty, Empty>;
@@ -156,10 +160,11 @@ impl<T, U, P: Protocol<Context<Empty, Empty>, Unravel = Infallible, Coalesce = I
 }
 
 impl<
+        F: ?Sized + Format<Bottom>,
         T: Unpin,
         U: Unpin,
-        P: Protocol<Context<Empty, Empty>, Unravel = Infallible, Coalesce = Infallible>,
-    > Spawn<P> for Context<T, U>
+        P: Protocol<Context<Empty, Empty>, F, Unravel = Bottom, Coalesce = Bottom>,
+    > Spawn<P, F> for Context<T, U>
 {
     type Error = Infallible;
     type Target = Context<Empty, Empty>;
@@ -176,10 +181,11 @@ impl<
 pub struct Trivial;
 
 impl<
-        P: Protocol<Context<U, T>>,
+        F: ?Sized + Format<P::Unravel> + Format<P::Coalesce>,
+        P: Protocol<Context<U, T>, F>,
         T: Unpin + Sink<P::Unravel> + Stream<Item = P::Coalesce>,
         U: Unpin + Stream<Item = P::Unravel> + Sink<P::Coalesce>,
-    > Director<P, U, T> for Trivial
+    > Director<P, F, U, T> for Trivial
 {
     type Context = Context<U, T>;
     type UnravelError = Infallible;

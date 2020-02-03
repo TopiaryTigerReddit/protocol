@@ -1,5 +1,5 @@
 use super::{Director, DirectorError};
-use crate::{Channel, Channels, ContextError, Dispatch, Join, Protocol, Spawn};
+use crate::{Bottom, Channel, Channels, ContextError, Dispatch, Format, Join, Protocol, Spawn};
 use core::{
     convert::Infallible,
     ops::{Deref, DerefMut},
@@ -18,15 +18,15 @@ impl Empty {
     }
 }
 
-impl Sink<Infallible> for Empty {
+impl Sink<Bottom> for Empty {
     type Error = Infallible;
 
     fn poll_ready(self: Pin<&mut Self>, _: &mut task::Context) -> Poll<Result<(), Self::Error>> {
         Poll::Ready(Ok(()))
     }
 
-    fn start_send(self: core::pin::Pin<&mut Self>, _: Infallible) -> Result<(), Self::Error> {
-        panic!("received empty type `core::convert::Infallible`")
+    fn start_send(self: core::pin::Pin<&mut Self>, _: Bottom) -> Result<(), Self::Error> {
+        panic!("received empty type `core::convert::Bottom`")
     }
 
     fn poll_flush(self: Pin<&mut Self>, _: &mut task::Context) -> Poll<Result<(), Self::Error>> {
@@ -39,7 +39,7 @@ impl Sink<Infallible> for Empty {
 }
 
 impl Stream for Empty {
-    type Item = Infallible;
+    type Item = Bottom;
 
     fn poll_next(self: Pin<&mut Self>, _: &mut task::Context) -> Poll<Option<Self::Item>> {
         Poll::Ready(None)
@@ -60,9 +60,9 @@ impl DerefMut for Empty {
     }
 }
 
-impl Channel<Infallible, Infallible, Context> for Empty {}
+impl Channel<Bottom, Bottom, Context> for Empty {}
 
-impl Channels<Infallible, Infallible> for Context {
+impl Channels<Bottom, Bottom> for Context {
     type Unravel = Empty;
     type Coalesce = Empty;
 }
@@ -71,7 +71,9 @@ impl Dispatch for Context {
     type Handle = ();
 }
 
-impl<P: Protocol<Context, Unravel = Infallible, Coalesce = Infallible>> Join<P> for Context {
+impl<F: ?Sized + Format<Bottom>, P: Protocol<Context, F, Unravel = Bottom, Coalesce = Bottom>>
+    Join<P, F> for Context
+{
     type Error = Infallible;
     type Target = Context;
     type Output = MapErr<
@@ -84,7 +86,9 @@ impl<P: Protocol<Context, Unravel = Infallible, Coalesce = Infallible>> Join<P> 
     }
 }
 
-impl<P: Protocol<Context, Unravel = Infallible, Coalesce = Infallible>> Spawn<P> for Context {
+impl<F: ?Sized + Format<Bottom>, P: Protocol<Context, F, Unravel = Bottom, Coalesce = Bottom>>
+    Spawn<P, F> for Context
+{
     type Error = Infallible;
     type Target = Context;
     type Output =
@@ -99,7 +103,13 @@ impl<P: Protocol<Context, Unravel = Infallible, Coalesce = Infallible>> Spawn<P>
 
 pub struct Null;
 
-impl<P: Protocol<Context, Unravel = Infallible, Coalesce = Infallible>, T> Director<P, T> for Null {
+impl<
+        F: ?Sized + Format<Bottom>,
+        P: Protocol<Context, F, Unravel = Bottom, Coalesce = Bottom>,
+        U,
+        T,
+    > Director<P, F, U, T> for Null
+{
     type Context = Context;
     type UnravelError = Infallible;
     type Unravel =
@@ -115,7 +125,7 @@ impl<P: Protocol<Context, Unravel = Infallible, Coalesce = Infallible>, T> Direc
         protocol.unravel(Empty(Context)).map_err(Protocol)
     }
 
-    fn coalesce(self, _: T) -> Self::Coalesce {
+    fn coalesce(self, _: U) -> Self::Coalesce {
         use DirectorError::Protocol;
         P::coalesce(Empty(Context)).map_err(Protocol)
     }

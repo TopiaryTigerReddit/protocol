@@ -14,7 +14,7 @@ pub enum DirectorError<T, U> {
     Protocol(U),
 }
 
-pub trait Director<P: Protocol<Self::Context>, Coalesce, Unravel = Coalesce> {
+pub trait Director<P: Protocol<Self::Context, F>, F: ?Sized, Coalesce, Unravel = Coalesce> {
     type Context: Channels<P::Unravel, P::Coalesce>;
     type UnravelError;
     type Unravel: Future<

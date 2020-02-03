@@ -9,8 +9,12 @@ use futures::{Sink, Stream, TryFuture};
 pub mod director;
 pub use director::Director;
 mod flat;
+pub mod format;
 mod option;
 mod unit;
+pub use format::Format;
+
+pub enum Bottom {}
 
 #[derive(Debug)]
 pub enum ContextError<Context, Protocol> {
@@ -18,7 +22,7 @@ pub enum ContextError<Context, Protocol> {
     Protocol(Protocol),
 }
 
-pub trait Join<P: Protocol<Self::Target>>: Dispatch {
+pub trait Join<P: Protocol<Self::Target, F>, F: ?Sized>: Dispatch {
     type Error;
     type Target;
     type Output: Future<
@@ -28,7 +32,7 @@ pub trait Join<P: Protocol<Self::Target>>: Dispatch {
     fn join(&mut self, handle: Self::Handle) -> Self::Output;
 }
 
-pub trait Spawn<P: Protocol<Self::Target>>: Dispatch {
+pub trait Spawn<P: Protocol<Self::Target, F>, F: ?Sized>: Dispatch {
     type Error;
     type Target;
     type Output: Future<
@@ -41,15 +45,18 @@ pub trait Spawn<P: Protocol<Self::Target>>: Dispatch {
     fn spawn(&mut self, item: P) -> Self::Output;
 }
 
-pub trait Pass<P: Protocol<<Self as Spawn<P>>::Target> + Protocol<<Self as Join<P>>::Target>>:
-    Spawn<P> + Join<P>
+pub trait Pass<
+    P: Protocol<<Self as Spawn<P, F>>::Target, F> + Protocol<<Self as Join<P, F>>::Target, F>,
+    F: ?Sized,
+>: Spawn<P, F> + Join<P, F>
 {
 }
 
 impl<
-        P: Protocol<<Self as Spawn<P>>::Target> + Protocol<<Self as Join<P>>::Target>,
-        T: Spawn<P> + Join<P>,
-    > Pass<P> for T
+        F: ?Sized,
+        P: Protocol<<Self as Spawn<P, F>>::Target, F> + Protocol<<Self as Join<P, F>>::Target, F>,
+        T: Spawn<P, F> + Join<P, F>,
+    > Pass<P, F> for T
 {
 }
 
@@ -64,7 +71,7 @@ pub trait Channels<Unravel, Coalesce> {
     type Coalesce: Channel<Unravel, Coalesce, Self>;
 }
 
-pub trait Protocol<C: ?Sized>: Sized {
+pub trait Protocol<C: ?Sized, F: ?Sized>: Sized {
     type Unravel;
     type UnravelError;
     type UnravelFuture: Future<Output = Result<(), Self::UnravelError>>;
@@ -74,9 +81,11 @@ pub trait Protocol<C: ?Sized>: Sized {
 
     fn unravel(self, channel: C::Unravel) -> Self::UnravelFuture
     where
-        C: Channels<Self::Unravel, Self::Coalesce>;
+        C: Channels<Self::Unravel, Self::Coalesce>,
+        F: Format<Self::Unravel> + Format<Self::Coalesce>;
 
     fn coalesce(channel: C::Coalesce) -> Self::CoalesceFuture
     where
-        C: Channels<Self::Unravel, Self::Coalesce>;
+        C: Channels<Self::Unravel, Self::Coalesce>,
+        F: Format<Self::Unravel> + Format<Self::Coalesce>;
 }
