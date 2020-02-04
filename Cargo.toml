@@ -5,10 +5,11 @@ authors = ["Izzy Swart <zenerboson@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-futures = { version = "0.3.1", default-features = false }
+futures = { version = "0.3.2", default-features = false }
 pin-utils = "0.1.0-alpha.4"
+core-futures-io = { git = "https://github.com/noocene/core-futures-io", default-features = false }
 
 [features]
-std = ["alloc"]
-alloc = []
+std = ["alloc", "core-futures-io/std"]
+alloc = ["core-futures-io/alloc"]
 default = ["std", "alloc"]
