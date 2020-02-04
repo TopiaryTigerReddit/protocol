@@ -8,7 +8,6 @@ use futures::{Sink, Stream, TryFuture};
 
 pub mod director;
 pub use director::Director;
-mod flat;
 pub mod format;
 mod option;
 mod unit;
@@ -22,7 +21,7 @@ pub enum ContextError<Context, Protocol> {
     Protocol(Protocol),
 }
 
-pub trait Join<P: Protocol<Self::Target, F>, F: ?Sized>: Dispatch {
+pub trait Join<P: Protocol<F, Self::Target>, F: ?Sized>: Dispatch {
     type Error;
     type Target;
     type Output: Future<
@@ -32,7 +31,7 @@ pub trait Join<P: Protocol<Self::Target, F>, F: ?Sized>: Dispatch {
     fn join(&mut self, handle: Self::Handle) -> Self::Output;
 }
 
-pub trait Spawn<P: Protocol<Self::Target, F>, F: ?Sized>: Dispatch {
+pub trait Spawn<P: Protocol<F, Self::Target>, F: ?Sized>: Dispatch {
     type Error;
     type Target;
     type Output: Future<
@@ -46,7 +45,7 @@ pub trait Spawn<P: Protocol<Self::Target, F>, F: ?Sized>: Dispatch {
 }
 
 pub trait Pass<
-    P: Protocol<<Self as Spawn<P, F>>::Target, F> + Protocol<<Self as Join<P, F>>::Target, F>,
+    P: Protocol<F, <Self as Spawn<P, F>>::Target> + Protocol<F, <Self as Join<P, F>>::Target>,
     F: ?Sized,
 >: Spawn<P, F> + Join<P, F>
 {
@@ -54,7 +53,7 @@ pub trait Pass<
 
 impl<
         F: ?Sized,
-        P: Protocol<<Self as Spawn<P, F>>::Target, F> + Protocol<<Self as Join<P, F>>::Target, F>,
+        P: Protocol<F, <Self as Spawn<P, F>>::Target> + Protocol<F, <Self as Join<P, F>>::Target>,
         T: Spawn<P, F> + Join<P, F>,
     > Pass<P, F> for T
 {
@@ -71,7 +70,7 @@ pub trait Channels<Unravel, Coalesce> {
     type Coalesce: Channel<Unravel, Coalesce, Self>;
 }
 
-pub trait Protocol<C: ?Sized, F: ?Sized>: Sized {
+pub trait Protocol<F: ?Sized, C: ?Sized>: Sized {
     type Unravel;
     type UnravelError;
     type UnravelFuture: Future<Output = Result<(), Self::UnravelError>>;

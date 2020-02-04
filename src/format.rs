@@ -1,5 +1,3 @@
-pub mod serde;
-pub use self::serde::Serde;
 use core::{convert::Infallible, future::Future};
 use futures::{
     future::{ready, Either, Map, MapErr, Ready},

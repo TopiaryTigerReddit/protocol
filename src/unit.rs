@@ -5,7 +5,7 @@ use core::{
 };
 use futures::future::{ready, Ready};
 
-impl<C, F: ?Sized> Protocol<C, F> for () {
+impl<C, F: ?Sized> Protocol<F, C> for () {
     type Unravel = Bottom;
     type UnravelError = Infallible;
     type UnravelFuture = Ready<Result<(), Infallible>>;
@@ -28,7 +28,7 @@ impl<C, F: ?Sized> Protocol<C, F> for () {
     }
 }
 
-impl<T, C, F: ?Sized> Protocol<C, F> for [T; 0] {
+impl<T, C, F: ?Sized> Protocol<F, C> for [T; 0] {
     type Unravel = Bottom;
     type UnravelError = Infallible;
     type UnravelFuture = Ready<Result<(), Infallible>>;
@@ -51,7 +51,7 @@ impl<T, C, F: ?Sized> Protocol<C, F> for [T; 0] {
     }
 }
 
-impl<T: ?Sized, C, F: ?Sized> Protocol<C, F> for PhantomData<T> {
+impl<T: ?Sized, C, F: ?Sized> Protocol<F, C> for PhantomData<T> {
     type Unravel = Bottom;
     type UnravelError = Infallible;
     type UnravelFuture = Ready<Result<(), Infallible>>;
@@ -74,7 +74,7 @@ impl<T: ?Sized, C, F: ?Sized> Protocol<C, F> for PhantomData<T> {
     }
 }
 
-impl<C, F: ?Sized> Protocol<C, F> for PhantomPinned {
+impl<C, F: ?Sized> Protocol<F, C> for PhantomPinned {
     type Unravel = Bottom;
     type UnravelError = Infallible;
     type UnravelFuture = Ready<Result<(), Infallible>>;

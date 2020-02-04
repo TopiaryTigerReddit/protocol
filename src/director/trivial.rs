@@ -144,7 +144,7 @@ impl<
         F: ?Sized + Format<Bottom>,
         T,
         U,
-        P: Protocol<Context<Empty, Empty>, F, Unravel = Bottom, Coalesce = Bottom>,
+        P: Protocol<F, Context<Empty, Empty>, Unravel = Bottom, Coalesce = Bottom>,
     > Join<P, F> for Context<T, U>
 {
     type Error = Infallible;
@@ -163,7 +163,7 @@ impl<
         F: ?Sized + Format<Bottom>,
         T: Unpin,
         U: Unpin,
-        P: Protocol<Context<Empty, Empty>, F, Unravel = Bottom, Coalesce = Bottom>,
+        P: Protocol<F, Context<Empty, Empty>, Unravel = Bottom, Coalesce = Bottom>,
     > Spawn<P, F> for Context<T, U>
 {
     type Error = Infallible;
@@ -182,7 +182,7 @@ pub struct Trivial;
 
 impl<
         F: ?Sized + Format<P::Unravel> + Format<P::Coalesce>,
-        P: Protocol<Context<U, T>, F>,
+        P: Protocol<F, Context<U, T>>,
         T: Unpin + Sink<P::Unravel> + Stream<Item = P::Coalesce>,
         U: Unpin + Stream<Item = P::Unravel> + Sink<P::Coalesce>,
     > Director<P, F, U, T> for Trivial

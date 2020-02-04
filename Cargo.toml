@@ -7,9 +7,8 @@ edition = "2018"
 [dependencies]
 futures = { version = "0.3.1", default-features = false }
 pin-utils = "0.1.0-alpha.4"
-serde = { version = "1.0.104", default-features = false, features = ["derive"] }
 
 [features]
 std = ["alloc"]
-alloc = ["serde/alloc"]
+alloc = []
 default = ["std", "alloc"]

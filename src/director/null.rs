@@ -71,7 +71,7 @@ impl Dispatch for Context {
     type Handle = ();
 }
 
-impl<F: ?Sized + Format<Bottom>, P: Protocol<Context, F, Unravel = Bottom, Coalesce = Bottom>>
+impl<F: ?Sized + Format<Bottom>, P: Protocol<F, Context, Unravel = Bottom, Coalesce = Bottom>>
     Join<P, F> for Context
 {
     type Error = Infallible;
@@ -86,7 +86,7 @@ impl<F: ?Sized + Format<Bottom>, P: Protocol<Context, F, Unravel = Bottom, Coale
     }
 }
 
-impl<F: ?Sized + Format<Bottom>, P: Protocol<Context, F, Unravel = Bottom, Coalesce = Bottom>>
+impl<F: ?Sized + Format<Bottom>, P: Protocol<F, Context, Unravel = Bottom, Coalesce = Bottom>>
     Spawn<P, F> for Context
 {
     type Error = Infallible;
@@ -105,7 +105,7 @@ pub struct Null;
 
 impl<
         F: ?Sized + Format<Bottom>,
-        P: Protocol<Context, F, Unravel = Bottom, Coalesce = Bottom>,
+        P: Protocol<F, Context, Unravel = Bottom, Coalesce = Bottom>,
         U,
         T,
     > Director<P, F, U, T> for Null
