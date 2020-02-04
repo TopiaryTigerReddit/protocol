@@ -13,21 +13,18 @@ jobs:
     - uses: actions/checkout@v1
     - name: Install dependencies
       run: |
-        sudo apt-get update -y
-        sudo apt-get install -y libgstreamer1.0-dev libgstreamer-plugins-bad1.0-dev libgstreamer-plugins-base1.0-dev
         rustup default stable
         rustup update
-        rustup target add wasm32-unknown-unknown
-    - name: Build for native
-      run: cargo build --verbose --release --features core
-    - name: Build for web
-      run: cargo build --verbose --release --target wasm32-unknown-unknown --features core
-    - name: Build for vessels
-      run: cargo build --verbose --release --target wasm32-unknown-unknown
+    - name: Build
+      run: cargo build
+    - name: Build for no_std
+      run: cargo build --no-default-features
+    - name: Build for alloc
+      run: cargo build --no-default-features --features alloc
     - name: Build documentation
       run: |
         cargo rustdoc
-        echo "<!DOCTYPE html><html><head><script>window.location.replace(\"/vessels/vessels\");</script></head></html>" > target/doc/index.html
+        echo "<!DOCTYPE html><html><head><script>window.location.replace(\"/protocol/protocol\");</script></head></html>" > target/doc/index.html
     - name: Deploy documentation
       uses: JamesIves/github-pages-deploy-action@2.0.3
       env:
