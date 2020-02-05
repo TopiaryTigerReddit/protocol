@@ -1,46 +1,32 @@
-use core::{convert::Infallible, future::Future};
 use core_futures_io::{AsyncRead, AsyncWrite};
-use futures::future::{ready, Ready};
+use futures::{Sink, TryStream};
 
 pub trait Format<T> {}
 
-pub trait ItemFormat<T>: Format<T> {
+pub trait ItemFormat<T, S: Sink<Self::Representation> + TryStream<Ok = Self::Representation>>:
+    Format<T>
+{
     type Representation;
-    type SerializeError;
-    type Serialize: Future<Output = Result<Self::Representation, Self::SerializeError>>;
-    type DeserializeError;
-    type Deserialize: Future<Output = Result<T, Self::DeserializeError>>;
+    type Output: TryStream<Ok = T> + Sink<T>;
 
-    fn serialize(&mut self, data: T) -> Self::Serialize;
-    fn deserialize(&mut self, data: Self::Representation) -> Self::Deserialize;
+    fn wire(self, transport: S) -> Self::Output;
 }
 
-pub trait ByteFormat<T>: Format<T> {
-    type SerializeError;
-    type Serialize: Future<Output = Result<(), Self::SerializeError>>;
-    type DeserializeError;
-    type Deserialize: Future<Output = Result<T, Self::DeserializeError>>;
+pub trait ByteFormat<T, S: AsyncRead + AsyncWrite>: Format<T> {
+    type Output: TryStream<Ok = T> + Sink<T>;
 
-    fn serialize<W: AsyncWrite>(&mut self, writer: &mut W, data: T) -> Self::Serialize;
-    fn deserialize<R: AsyncRead>(&mut self, reader: &mut R) -> Self::Deserialize;
+    fn wire(self, transport: S) -> Self::Output;
 }
 
 pub struct Null;
 
 impl<T> Format<T> for Null {}
 
-impl<T> ItemFormat<T> for Null {
+impl<T, S: Sink<T> + TryStream<Ok = T>> ItemFormat<T, S> for Null {
     type Representation = T;
-    type SerializeError = Infallible;
-    type Serialize = Ready<Result<T, Infallible>>;
-    type DeserializeError = Infallible;
-    type Deserialize = Ready<Result<T, Infallible>>;
+    type Output = S;
 
-    fn serialize(&mut self, data: T) -> Self::Serialize {
-        ready(Ok(data))
-    }
-
-    fn deserialize(&mut self, data: T) -> Self::Serialize {
-        ready(Ok(data))
+    fn wire(self, transport: S) -> S {
+        transport
     }
 }
