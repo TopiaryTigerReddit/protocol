@@ -8,8 +8,9 @@ edition = "2018"
 futures = { version = "0.3.2", default-features = false }
 pin-utils = "0.1.0-alpha.4"
 core-futures-io = { git = "https://github.com/noocene/core-futures-io", default-features = false }
+void = { version = "1.0.2", default-features = false }
 
 [features]
-std = ["alloc", "core-futures-io/std"]
+std = ["alloc", "core-futures-io/std", "void/std"]
 alloc = ["core-futures-io/alloc"]
 default = ["std", "alloc"]

@@ -4,7 +4,7 @@
 extern crate alloc;
 
 use core::{future::Future, ops::DerefMut};
-use futures::{Sink, Stream, TryFuture};
+use futures::{Sink, TryFuture, TryStream};
 
 pub mod director;
 pub use director::Director;
@@ -59,7 +59,7 @@ impl<
 {
 }
 
-pub trait Channel<T, U, S: ?Sized>: Stream<Item = T> + Sink<U> + DerefMut<Target = S> {}
+pub trait Channel<T, U, S: ?Sized>: TryStream<Ok = T> + Sink<U> + DerefMut<Target = S> {}
 
 pub trait Dispatch {
     type Handle;

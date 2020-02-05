@@ -9,14 +9,15 @@ use core::{
 use futures::{
     future::{ready, Either, Ready},
     ready,
-    stream::{once, Forward, Once, StreamFuture},
-    Sink, StreamExt, TryFuture,
+    stream::{once, Forward, IntoStream, Once, StreamFuture},
+    Sink, StreamExt, TryFuture, TryStream, TryStreamExt,
 };
 use pin_utils::pin_mut;
 
-pub enum Error<Unravel, Send> {
+#[derive(Debug)]
+pub enum Error<Unravel, Channel> {
     Unravel(Unravel),
-    Send(Send),
+    Channel(Channel),
 }
 
 pub enum Coalesce<
@@ -24,7 +25,7 @@ pub enum Coalesce<
     T: Unpin + Protocol<F, <C as Spawn<T, F>>::Target> + Protocol<F, <C as Join<T, F>>::Target>,
     F: ?Sized,
 > {
-    Next(StreamFuture<C::Coalesce>),
+    Next(StreamFuture<IntoStream<C::Coalesce>>),
     Join(<C as Join<T, F>>::Output),
 }
 
@@ -51,7 +52,7 @@ where
     C::Coalesce: Unpin,
 {
     fn new(channel: C::Coalesce) -> Self {
-        Coalesce::Next(channel.into_future())
+        Coalesce::Next(channel.into_stream().into_future())
     }
 }
 
@@ -79,9 +80,12 @@ where
 {
     type Output = Result<
         Option<T>,
-        ContextError<
-            <C as Join<T, F>>::Error,
-            <<T as Protocol<F, <C as Join<T, F>>::Target>>::CoalesceFuture as TryFuture>::Error,
+        Error<
+            ContextError<
+                <C as Join<T, F>>::Error,
+                <<T as Protocol<F, <C as Join<T, F>>::Target>>::CoalesceFuture as TryFuture>::Error,
+            >,
+            <C::Coalesce as TryStream>::Error,
         >,
     >;
 
@@ -91,16 +95,17 @@ where
                 Coalesce::Next(next) => {
                     pin_mut!(next);
                     let handle = ready!(next.poll(ctx));
-                    let (handle, mut channel) = match handle {
+                    let (handle, channel) = match handle {
                         (Some(handle), channel) => (handle, channel),
                         (None, _) => return Poll::Ready(Ok(None)),
                     };
-                    let replacement = Coalesce::Join(channel.join(handle));
+                    let replacement =
+                        Coalesce::Join(channel.into_inner().join(handle.map_err(Error::Channel)?));
                     replace(&mut *self, replacement);
                 }
                 Coalesce::Join(join) => {
                     pin_mut!(join);
-                    return Poll::Ready(ready!(join.poll(ctx)).map(Some));
+                    return Poll::Ready(ready!(join.poll(ctx)).map(Some).map_err(Error::Unravel));
                 }
             };
         }
@@ -145,7 +150,7 @@ where
                 }
                 Unravel::Send(send) => {
                     pin_mut!(send);
-                    return Poll::Ready(ready!(send.poll(ctx)).map_err(Error::Send));
+                    return Poll::Ready(ready!(send.poll(ctx)).map_err(Error::Channel));
                 }
             };
         }

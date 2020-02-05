@@ -1,17 +1,15 @@
 use crate::{Bottom, Channels, Protocol};
-use core::{
-    convert::Infallible,
-    marker::{PhantomData, PhantomPinned},
-};
+use core::marker::{PhantomData, PhantomPinned};
 use futures::future::{ready, Ready};
+use void::Void;
 
 impl<C, F: ?Sized> Protocol<F, C> for () {
     type Unravel = Bottom;
-    type UnravelError = Infallible;
-    type UnravelFuture = Ready<Result<(), Infallible>>;
+    type UnravelError = Void;
+    type UnravelFuture = Ready<Result<(), Void>>;
     type Coalesce = Bottom;
-    type CoalesceError = Infallible;
-    type CoalesceFuture = Ready<Result<(), Infallible>>;
+    type CoalesceError = Void;
+    type CoalesceFuture = Ready<Result<(), Void>>;
 
     fn unravel(self, _: C::Unravel) -> Self::UnravelFuture
     where
@@ -30,11 +28,11 @@ impl<C, F: ?Sized> Protocol<F, C> for () {
 
 impl<T, C, F: ?Sized> Protocol<F, C> for [T; 0] {
     type Unravel = Bottom;
-    type UnravelError = Infallible;
-    type UnravelFuture = Ready<Result<(), Infallible>>;
+    type UnravelError = Void;
+    type UnravelFuture = Ready<Result<(), Void>>;
     type Coalesce = Bottom;
-    type CoalesceError = Infallible;
-    type CoalesceFuture = Ready<Result<[T; 0], Infallible>>;
+    type CoalesceError = Void;
+    type CoalesceFuture = Ready<Result<[T; 0], Void>>;
 
     fn unravel(self, _: C::Unravel) -> Self::UnravelFuture
     where
@@ -53,11 +51,11 @@ impl<T, C, F: ?Sized> Protocol<F, C> for [T; 0] {
 
 impl<T: ?Sized, C, F: ?Sized> Protocol<F, C> for PhantomData<T> {
     type Unravel = Bottom;
-    type UnravelError = Infallible;
-    type UnravelFuture = Ready<Result<(), Infallible>>;
+    type UnravelError = Void;
+    type UnravelFuture = Ready<Result<(), Void>>;
     type Coalesce = Bottom;
-    type CoalesceError = Infallible;
-    type CoalesceFuture = Ready<Result<PhantomData<T>, Infallible>>;
+    type CoalesceError = Void;
+    type CoalesceFuture = Ready<Result<PhantomData<T>, Void>>;
 
     fn unravel(self, _: C::Unravel) -> Self::UnravelFuture
     where
@@ -76,11 +74,11 @@ impl<T: ?Sized, C, F: ?Sized> Protocol<F, C> for PhantomData<T> {
 
 impl<C, F: ?Sized> Protocol<F, C> for PhantomPinned {
     type Unravel = Bottom;
-    type UnravelError = Infallible;
-    type UnravelFuture = Ready<Result<(), Infallible>>;
+    type UnravelError = Void;
+    type UnravelFuture = Ready<Result<(), Void>>;
     type Coalesce = Bottom;
-    type CoalesceError = Infallible;
-    type CoalesceFuture = Ready<Result<PhantomPinned, Infallible>>;
+    type CoalesceError = Void;
+    type CoalesceFuture = Ready<Result<PhantomPinned, Void>>;
 
     fn unravel(self, _: C::Unravel) -> Self::UnravelFuture
     where

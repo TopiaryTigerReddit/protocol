@@ -1,12 +1,12 @@
 use super::{Director, DirectorError};
 use crate::{Bottom, Channel, Channels, ContextError, Dispatch, Format, Join, Protocol, Spawn};
 use core::{
-    convert::Infallible,
     ops::{Deref, DerefMut},
     pin::Pin,
     task::{self, Poll},
 };
 use futures::{future::MapErr, Sink, Stream, TryFutureExt};
+use void::Void;
 
 pub struct Context;
 
@@ -19,7 +19,7 @@ impl Empty {
 }
 
 impl Sink<Bottom> for Empty {
-    type Error = Infallible;
+    type Error = Void;
 
     fn poll_ready(self: Pin<&mut Self>, _: &mut task::Context) -> Poll<Result<(), Self::Error>> {
         Poll::Ready(Ok(()))
@@ -39,7 +39,7 @@ impl Sink<Bottom> for Empty {
 }
 
 impl Stream for Empty {
-    type Item = Bottom;
+    type Item = Result<Bottom, Void>;
 
     fn poll_next(self: Pin<&mut Self>, _: &mut task::Context) -> Poll<Option<Self::Item>> {
         Poll::Ready(None)
@@ -74,12 +74,10 @@ impl Dispatch for Context {
 impl<F: ?Sized + Format<Bottom>, P: Protocol<F, Context, Unravel = Bottom, Coalesce = Bottom>>
     Join<P, F> for Context
 {
-    type Error = Infallible;
+    type Error = Void;
     type Target = Context;
-    type Output = MapErr<
-        P::CoalesceFuture,
-        fn(P::CoalesceError) -> ContextError<Infallible, P::CoalesceError>,
-    >;
+    type Output =
+        MapErr<P::CoalesceFuture, fn(P::CoalesceError) -> ContextError<Void, P::CoalesceError>>;
 
     fn join(&mut self, _: ()) -> Self::Output {
         P::coalesce(Empty(Context)).map_err(ContextError::Protocol)
@@ -89,10 +87,10 @@ impl<F: ?Sized + Format<Bottom>, P: Protocol<F, Context, Unravel = Bottom, Coale
 impl<F: ?Sized + Format<Bottom>, P: Protocol<F, Context, Unravel = Bottom, Coalesce = Bottom>>
     Spawn<P, F> for Context
 {
-    type Error = Infallible;
+    type Error = Void;
     type Target = Context;
     type Output =
-        MapErr<P::UnravelFuture, fn(P::UnravelError) -> ContextError<Infallible, P::UnravelError>>;
+        MapErr<P::UnravelFuture, fn(P::UnravelError) -> ContextError<Void, P::UnravelError>>;
 
     fn spawn(&mut self, protocol: P) -> Self::Output {
         protocol
@@ -111,14 +109,12 @@ impl<
     > Director<P, F, U, T> for Null
 {
     type Context = Context;
-    type UnravelError = Infallible;
+    type UnravelError = Void;
     type Unravel =
-        MapErr<P::UnravelFuture, fn(P::UnravelError) -> DirectorError<Infallible, P::UnravelError>>;
-    type CoalesceError = Infallible;
-    type Coalesce = MapErr<
-        P::CoalesceFuture,
-        fn(P::CoalesceError) -> DirectorError<Infallible, P::CoalesceError>,
-    >;
+        MapErr<P::UnravelFuture, fn(P::UnravelError) -> DirectorError<Void, P::UnravelError>>;
+    type CoalesceError = Void;
+    type Coalesce =
+        MapErr<P::CoalesceFuture, fn(P::CoalesceError) -> DirectorError<Void, P::CoalesceError>>;
 
     fn unravel(self, protocol: P, _: T) -> Self::Unravel {
         use DirectorError::Protocol;
